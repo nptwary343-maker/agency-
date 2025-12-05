@@ -9,6 +9,9 @@
     "lint": "next lint",
     "test": "jest"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@prisma/client": "^5.10.2",
     "ioredis": "^5.8.2",
