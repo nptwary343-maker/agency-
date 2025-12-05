@@ -17,7 +17,7 @@ services:
 
     # Apply DB migrations at startup before serving traffic
     startCommand: |
-      npx prisma migrate deploy
+      npx prisma db push
       npm run start
 
     autoDeploy: true
