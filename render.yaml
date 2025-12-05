@@ -1,0 +1,57 @@
+ 
+ # Render Blueprint for Asthar Hat E‑Commerce Platform
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: asthar-hat-web
+    env: node
+    plan: free
+    region: oregon
+
+    # Build with Next.js 14 (App Router) and Prisma
+    buildCommand: |
+      npm ci
+      npx prisma generate
+      npm run build
+
+    # Apply DB migrations at startup before serving traffic
+    startCommand: |
+      npx prisma migrate deploy
+      npm run start
+
+    autoDeploy: true
+
+    # Health check (Next.js default port 3000)
+    healthCheckPath: /
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: asthar-hat-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: asthar-hat-redis
+          type: redis
+          property: connectionString
+      # Add any app secrets below via Render dashboard overrides (never commit real values):
+      # - key: APP_SECRET
+      #   sync: false
+
+# Managed Postgres database
+Databases:
+  - name: asthar-hat-db
+    plan: free
+    databaseName: asthar_hat
+    user: asthar_user
+
+# Managed Redis instance for caching (5-minute TTL recommended in app code)
+services:
+  - type: redis
+    name: asthar-hat-redis
+    plan: free

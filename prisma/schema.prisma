@@ -1,0 +1,161 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User & Auth
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  SELLER
+  CUSTOMER
+  DELIVERY_BOY
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  orders    Order[]
+  deliveries Order[] @relation("RiderOrders")
+}
+
+// Category Management
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  icon        String?   // URL or icon name
+  color       String?   // Hex code
+  order       Int       @default(0)
+  isHidden    Boolean   @default(false)
+  
+  products    Product[]
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Product Model
+model Product {
+  id             String      @id @default(uuid())
+  title          String
+  slug           String      @unique
+  description    String?
+  price          Float
+  discount_price Float?
+  stock_status   StockStatus @default(IN_STOCK)
+  stock_quantity Int         @default(0)
+  thumbnail      String
+  images         String[]
+  
+  categoryId     String
+  category       Category    @relation(fields: [categoryId], references: [id])
+  
+  orderItems     OrderItem[]
+  
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+enum StockStatus {
+  IN_STOCK
+  OUT_OF_STOCK
+  LOW_STOCK
+}
+
+// Order System
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  RETURNED
+  REFUNDED
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  
+  riderId         String?
+  rider           User?       @relation("RiderOrders", fields: [riderId], references: [id])
+  
+  status          OrderStatus @default(PENDING)
+  totalAmount     Float
+  deliveryCost    Float       @default(0)
+  advancePayment  Float       @default(0)
+  
+  items           OrderItem[]
+  tracking        OrderTracking[]
+  
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+}
+
+// Delivery Tracking
+model OrderTracking {
+  id        String          @id @default(uuid())
+  orderId   String
+  order     Order           @relation(fields: [orderId], references: [id])
+  
+  riderId   String
+  gps_lat   Float
+  gps_lng   Float
+  status    TrackingStatus
+  seen      Boolean         @default(false) // Monitoring seen/unseen flag
+  
+  timestamp DateTime        @default(now())
+}
+
+enum TrackingStatus {
+  PENDING
+  ACCEPTED
+  PICKED
+  ON_THE_WAY
+  DELIVERED
+}
+
+// Daily Reports
+model DailyReport {
+  id              String   @id @default(uuid())
+  date            DateTime @unique @db.Date
+  
+  totalOrders     Int
+  completedOrders Int
+  pendingOrders   Int
+  returnedOrders  Int
+  refundedOrders  Int
+  
+  totalRevenue    Float
+  deliveryCost    Float
+  
+  reportUrl       String?  // URL to PDF/XLSX on S3
+  
+  createdAt       DateTime @default(now())
+}
