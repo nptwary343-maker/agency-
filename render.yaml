@@ -5,15 +5,13 @@
 services:
   - type: web
     name: asthar-hat-web
-    env: node
+    env: docker
     plan: free
     region: oregon
 
-    # Build with Next.js 14 (App Router) and Prisma
-    buildCommand: |
-      npm ci
-      npx prisma generate
-      npm run build
+    dockerfilePath: Dockerfile
+    dockerContext: .
+
 
     # Apply DB migrations at startup before serving traffic
     startCommand: |
