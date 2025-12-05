@@ -43,15 +43,13 @@ services:
       # - key: APP_SECRET
       #   sync: false
 
+  - type: redis
+    name: asthar-hat-redis
+    plan: free
+
 # Managed Postgres database
-Databases:
+databases:
   - name: asthar-hat-db
     plan: free
     databaseName: asthar_hat
     user: asthar_user
-
-# Managed Redis instance for caching (5-minute TTL recommended in app code)
-services:
-  - type: redis
-    name: asthar-hat-redis
-    plan: free
